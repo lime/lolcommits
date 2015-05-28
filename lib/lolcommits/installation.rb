@@ -73,18 +73,22 @@ module Lolcommits
       imagick_path  = Lolcommits::Platform.command_which('identify', true)
 
       if Lolcommits::Platform.platform_windows?
+        rebase_pre = "if exist %GIT_DIR%\\rebase-merge\\ (\n"
+        rebase_post = ")\n"
         hook_export = "set path \"#{ruby_path};#{imagick_path};%PATH%\"\n"
       else
+        rebase_pre = "if [ ! -d $GIT_DIR/rebase-merge ]; then\n"
+        rebase_post = "fi\n"
         locale_export = "export LANG=\"#{ENV['LANG']}\"\n"
         hook_export   = "export PATH=\"#{ruby_path}:#{imagick_path}:$PATH\"\n"
       end
 
       capture_cmd   = 'lolcommits --capture'
-      capture_args  = " #{ARGV[1..-1].join(' ')}" if ARGV.length > 1
+      capture_args  = " #{ARGV[1..-1].join(' ')}\n" if ARGV.length > 1
 
       <<-EOS
 ### lolcommits hook (begin) ###
-#{locale_export}#{hook_export}#{capture_cmd}#{capture_args}
+#{rebase_pre}#{locale_export}#{hook_export}#{capture_cmd}#{capture_args}#{rebase_post}
 ###  lolcommits hook (end)  ###
 EOS
     end
