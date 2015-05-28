@@ -73,24 +73,29 @@ module Lolcommits
       imagick_path  = Lolcommits::Platform.command_which('identify', true)
 
       if Lolcommits::Platform.platform_windows?
-        rebase_pre = "if exist %GIT_DIR%\\rebase-merge\\ (\n"
-        rebase_post = ")\n"
-        hook_export = "set path \"#{ruby_path};#{imagick_path};%PATH%\"\n"
+        rebase_pre = 'if exist %GIT_DIR%\rebase-merge\ ('
+        rebase_post = ')'
+        hook_export = %(set path "#{ruby_path};#{imagick_path};%PATH%")
       else
-        rebase_pre = "if [ ! -d $GIT_DIR/rebase-merge ]; then\n"
-        rebase_post = "fi\n"
-        locale_export = "export LANG=\"#{ENV['LANG']}\"\n"
-        hook_export   = "export PATH=\"#{ruby_path}:#{imagick_path}:$PATH\"\n"
+        rebase_pre = 'if [ ! -d $GIT_DIR/rebase-merge ]; then'
+        rebase_post = 'fi'
+        locale_export = %(export LANG="#{ENV['LANG']}")
+        hook_export   = %(export PATH="#{ruby_path}:#{imagick_path}:$PATH")
       end
 
       capture_cmd   = 'lolcommits --capture'
-      capture_args  = " #{ARGV[1..-1].join(' ')}\n" if ARGV.length > 1
+      capture_args  = " #{ARGV[1..-1].join(' ')}" if ARGV.length > 1
 
-      <<-EOS
+      hook = <<-EOS
 ### lolcommits hook (begin) ###
-#{rebase_pre}#{locale_export}#{hook_export}#{capture_cmd}#{capture_args}#{rebase_post}
+#{rebase_pre}
+  #{locale_export}
+  #{hook_export}
+  #{capture_cmd}#{capture_args}
+#{rebase_post}
 ###  lolcommits hook (end)  ###
 EOS
+      hook.each_line.reject { |l| l.strip.empty? }.join
     end
 
     # does a git hook exist at all?
